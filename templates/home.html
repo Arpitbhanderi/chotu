@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head><title>Chotu</title></head>
+<body>
+  <h1>Chotu Billing (Windows)</h1>
+  <form method="post" action="/make_invoice">
+    <h3>Customer</h3>
+    <input name="customer" placeholder="Name" required><br>
+    <h3>Product</h3>
+    <input name="product" placeholder="Product" required><br>
+    <input name="company" placeholder="Company"><br>
+    <input name="description" placeholder="Description"><br>
+    <input name="qty" type="number" value="1"><br>
+    <input name="price" type="number" placeholder="Price" required><br>
+    <button type="submit">Create Invoice</button>
+  </form>
+
+  <p><a href="/invoices">Invoice History</a></p>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+        {% for m in messages %}
+          <li>{{ m }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+</body>
+</html>

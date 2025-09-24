@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Welcome to your business management system overview</p>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-gradient-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('new_invoice') }}" class="btn btn-primary w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-plus-circle fa-lg mb-1"></i>
+                            <span class="fw-semibold small">Create</span>
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('customers') }}" class="btn btn-success w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-user-plus fa-lg mb-1"></i>
+                            <span class="fw-semibold small">Customer</span>
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('show_products') }}" class="btn btn-info w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-box-open fa-lg mb-1"></i>
+                            <span class="fw-semibold small">Products</span>
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('khata_book') }}" class="btn btn-warning w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-book fa-lg mb-1"></i>
+                            <span class="fw-semibold small">Khata</span>
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('invoice_history') }}" class="btn btn-secondary w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-history fa-lg mb-1"></i>
+                            <span class="fw-semibold small">History</span>
+                        </a>
+                    </div>
+                    <div class="col-lg-2 col-md-3 col-sm-4 col-6">
+                        <a href="{{ url_for('assistant') }}" class="btn btn-dark w-100 d-flex flex-column align-items-center justify-content-center py-3" style="aspect-ratio: 1; min-height: 80px;">
+                            <i class="fas fa-robot fa-lg mb-1"></i>
+                            <span class="fw-semibold small">AI</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-users fa-2x text-primary"></i>
+                </div>
+                <h3 class="text-dark">{{ cust_count }}</h3>
+                <p class="text-muted mb-3">Total Customers</p>
+                <a href="/customers" class="btn btn-primary">
+                    <i class="fas fa-arrow-right me-2"></i>Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-box fa-2x text-success"></i>
+                </div>
+                <h3 class="text-dark">{{ prod_count }}</h3>
+                <p class="text-muted mb-3">Total Products</p>
+                <a href="/products" class="btn btn-success">
+                    <i class="fas fa-arrow-right me-2"></i>Manage
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-file-invoice fa-2x text-info"></i>
+                </div>
+                <h3 class="text-dark">{{ inv_count }}</h3>
+                <p class="text-muted mb-3">Total Invoices</p>
+                <a href="/invoices" class="btn btn-info">
+                    <i class="fas fa-eye me-2"></i>View All
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-book fa-2x text-danger"></i>
+                </div>
+                <h3 class="text-dark">Khata Book</h3>
+                <p class="text-muted mb-3">Customer Accounts</p>
+                <a href="{{ url_for('khata_book') }}" class="btn btn-danger">
+                    <i class="fas fa-eye me-2"></i>View Khata
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Invoice Statistics -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-file-invoice-dollar fa-2x text-success"></i>
+                </div>
+                <h3 class="text-dark">{{ inv_count }}</h3>
+                <p class="text-muted mb-0">Total Invoices</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-rupee-sign fa-2x text-primary"></i>
+                </div>
+                <h3 class="text-dark">₹{{ "%.2f"|format(total_revenue) }}</h3>
+                <p class="text-muted mb-0">Total Revenue</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chart-line fa-2x text-info"></i>
+                </div>
+                <h3 class="text-dark">₹{{ "%.2f"|format(average_invoice) }}</h3>
+                <p class="text-muted mb-0">Average Invoice</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100 bg-light">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="fas fa-rupee-sign fa-2x text-danger"></i>
+                </div>
+                <h3 class="text-dark">₹{{ "%.2f"|format(total_outstanding or 0) }}</h3>
+                <p class="text-muted mb-0">Outstanding Balance</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+{% endblock %}
+
+<style>
+/* Custom gradient for Quick Actions header */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Enhanced button styling for Quick Actions */
+.quick-action-btn {
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.quick-action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.quick-action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.quick-action-btn:hover::before {
+    left: 100%;
+}
+
+/* Card shadow enhancements */
+.card {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* Stats card improvements */
+.stats-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+}
+</style>

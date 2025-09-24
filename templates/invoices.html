@@ -1,0 +1,415 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Invoice Management</h2>
+                    <p class="text-muted mb-0">Manage and view your business invoices</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/new_invoice" class="btn btn-primary px-4">
+                        <i class="fas fa-plus me-2"></i>New Invoice
+                    </a>
+                    <a href="/invoice_history" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-history me-2"></i>Advanced History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if invoices %}
+    <!-- Invoice Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card" style="overflow: visible;">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold">Recent Invoices</h5>
+                        <span class="badge bg-light text-primary px-3 py-2">{{ invoices|length }} Total</span>
+                    </div>
+                </div>
+                <div class="card-body p-0" style="overflow: visible !important;">
+                    <div style="overflow-x: auto; overflow-y: visible !important;">
+                        <table class="table table-hover mb-0" style="overflow: visible !important;">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 2px solid #dee2e6;">
+                                <tr>
+                                    <th class="ps-4 py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-file-invoice me-2 text-primary"></i>Invoice Details
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-user-tie me-2 text-success"></i>Customer Information
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-rupee-sign me-2 text-success"></i>Amount
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-calendar-alt me-2 text-info"></i>Date
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-flag me-2 text-danger"></i>Status
+                                    </th>
+                                    <th class="pe-4 py-3 fw-semibold text-dark border-0 actions-col no-clip" style="font-size: 0.9rem;">
+                                        <i class="fas fa-tools me-2 text-secondary"></i>Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in invoices %}
+                                <tr>
+                                    <td class="ps-4">
+                                        <div>
+                                            <span class="fw-bold text-dark">{{ i.number }}</span>
+                                            {% if i.notes %}
+                                            <div class="small text-muted mt-1">{{ i.notes[:40] }}{% if i.notes|length > 40 %}...{% endif %}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="fw-semibold text-dark">{{ i.customer.name if i.customer else 'N/A' }}</span>
+                                            {% if i.customer and i.customer.phone %}
+                                            <div class="small text-muted">{{ i.customer.phone }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="fw-bold text-success h6 mb-0">₹{{ "%.2f"|format(i.total) }}</span>
+                                            {% if i.discount_amount and i.discount_amount > 0 %}
+                                            <div class="small text-warning">Discount: ₹{{ "%.2f"|format(i.discount_amount) }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="text-dark">{{ i.invoice_date }}</span>
+                                            {% if i.due_date %}
+                                            <div class="small text-muted">Due: {{ i.due_date }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if i.payment_status == 'paid' %}
+                                            <span class="badge bg-success text-white">Paid</span>
+                                        {% elif i.payment_status == 'partial' %}
+                                            <span class="badge bg-warning text-dark">Partial</span>
+                                        {% else %}
+                                            <span class="badge bg-danger text-white">Unpaid</span>
+                                        {% endif %}
+                                        {% if i.due_date and today_str and i.due_date < today_str and i.payment_status != 'paid' %}
+                                            <br><small class="text-danger">Overdue</small>
+                                        {% endif %}
+                                    </td>
+                                    <td class="pe-4 actions-col">
+                                        <div class="btn-group" role="group" style="white-space: nowrap;">
+                                            <a href="/invoice_details/{{ i.id }}" class="btn btn-sm btn-primary text-white" title="View Details">
+                                                View
+                                            </a>
+                                            <a href="/invoice_pdf/{{ i.number }}" class="btn btn-sm btn-info text-white" title="Download PDF">
+                                                PDF
+                                            </a>
+                                            <div class="btn-group" role="group" style="position: relative; z-index: 999999 !important;">
+                                                <button class="btn btn-sm btn-secondary dropdown-toggle text-white custom-dropdown-toggle" type="button" aria-expanded="false" title="More Actions" data-invoice-id="{{ i.id }}" data-invoice-number="{{ i.number }}">
+                                                    More
+                                                </button>
+                                                <ul class="dropdown-menu custom-dropdown-menu" id="dropdown-{{ i.id }}" data-portal="true" style="display: none;">
+                                                    <li>
+                                                        <form method="POST" action="/print_invoice/{{ i.number }}" class="d-inline">
+                                                            <button type="submit" class="dropdown-item">Print</button>
+                                                        </form>
+                                                    </li>
+                                                    <li>
+                                                        <form method="POST" action="/duplicate_invoice/{{ i.number }}" class="d-inline" 
+                                                              onsubmit="return confirm('Create a duplicate of this invoice?')">
+                                                            <button type="submit" class="dropdown-item">Duplicate</button>
+                                                        </form>
+                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li>
+                                                        <a href="/delete_invoice/{{ i.number }}" class="dropdown-item text-danger" 
+                                                           onclick="return confirm('Are you sure you want to delete this invoice?')">Delete</a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-primary mb-2">
+                        <i class="fas fa-file-invoice fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-primary">{{ invoices|length }}</h3>
+                    <p class="text-muted mb-0">Total Invoices</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-success mb-2">
+                        <i class="fas fa-rupee-sign fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-success">₹{{ "%.2f"|format(invoices|sum(attribute='total')) }}</h3>
+                    <p class="text-muted mb-0">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-info mb-2">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-info">₹{{ "%.2f"|format((invoices|sum(attribute='total')) / (invoices|length) if invoices|length > 0 else 0) }}</h3>
+                    <p class="text-muted mb-0">Average Invoice</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="text-warning mb-2">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                    <h3 class="fw-bold text-warning">{{ invoices|selectattr('customer')|map(attribute='customer.name')|unique|list|length }}</h3>
+                    <p class="text-muted mb-0">Unique Customers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <div class="text-muted mb-4">
+                        <i class="fas fa-file-invoice fa-4x"></i>
+                    </div>
+                    <h4 class="text-muted mb-3">No Invoices Found</h4>
+                    <p class="text-muted mb-4">Create your first invoice to get started</p>
+                    <a href="/new_invoice" class="btn btn-primary btn-lg px-5">
+                        <i class="fas fa-plus me-2"></i>Create First Invoice
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+/* Remove table-responsive overflow restrictions */
+.table-responsive,
+.card-body,
+.card {
+    overflow: visible !important;
+}
+
+/* Custom dropdown styles */
+.custom-dropdown-menu {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0;
+    min-width: 160px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+}
+
+.custom-dropdown-menu .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 1rem;
+    clear: both;
+    font-weight: 400;
+    color: #212529;
+    text-align: inherit;
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: transparent;
+    border: 0;
+}
+
+.custom-dropdown-menu .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.custom-dropdown-menu .dropdown-divider {
+    height: 0;
+    margin: 0.5rem 0;
+    overflow: hidden;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Ensure parent containers don't clip */
+.container-fluid,
+.row,
+.col-12 {
+    overflow: visible !important;
+}
+
+/* Fix table overflow */
+table {
+    overflow: visible !important;
+}
+
+/* Fix for actions column */
+.actions-col {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Ensure dropdown button group has proper styling */
+.btn-group {
+    position: relative !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let currentOpenDropdown = null;
+    let currentOriginParent = null;
+    let currentToggle = null;
+
+    function measureMenu(menu) {
+        // Ensure we can measure real size
+        const prevDisplay = menu.style.display;
+        const prevVis = menu.style.visibility;
+        menu.style.visibility = 'hidden';
+        menu.style.display = 'block';
+        const width = Math.max(menu.offsetWidth, 160);
+        const height = menu.offsetHeight;
+        menu.style.display = prevDisplay || 'none';
+        menu.style.visibility = prevVis || '';
+        return { width, height };
+    }
+
+    function positionMenu(toggle, menu) {
+        const rect = toggle.getBoundingClientRect();
+        const { width: menuW, height: menuH } = measureMenu(menu);
+        const viewportW = window.innerWidth;
+        const viewportH = window.innerHeight;
+        // Prefer right-aligned to the button
+        let left = Math.min(rect.right - menuW, viewportW - menuW - 10);
+        // If still off-screen left, clamp
+        left = Math.max(10, left);
+        // Default show below
+        let top = rect.bottom + 4;
+        // If bottom overflows, try above
+        if (top + menuH > viewportH - 10) {
+            top = Math.max(10, rect.top - menuH - 4);
+        }
+        menu.style.left = left + 'px';
+        menu.style.top = top + 'px';
+    }
+
+    function openMenu(toggle, menu) {
+        // Close any currently open
+        if (currentOpenDropdown && currentOpenDropdown !== menu) {
+            closeMenu();
+        }
+
+        // Portal to body if not already
+        if (!menu.dataset.portalized) {
+            menu.dataset.originalParent = menu.parentElement ? '1' : '';
+            menu.__originParent = menu.parentElement;
+            document.body.appendChild(menu);
+            menu.dataset.portalized = 'true';
+        }
+
+        // Style to ensure on top and detached from table stacking contexts
+        menu.style.position = 'fixed';
+        menu.style.zIndex = '20000';
+        menu.style.minWidth = '160px';
+        menu.style.boxShadow = '0 10px 30px rgba(0,0,0,0.3)';
+        menu.classList.add('show');
+        menu.style.display = 'block';
+
+        positionMenu(toggle, menu);
+
+        currentOpenDropdown = menu;
+        currentOriginParent = menu.__originParent || null;
+        currentToggle = toggle;
+        try { toggle.setAttribute('aria-expanded', 'true'); } catch (e) {}
+    }
+
+    function closeMenu() {
+        if (!currentOpenDropdown) return;
+        const menu = currentOpenDropdown;
+        menu.style.display = 'none';
+        menu.classList.remove('show');
+        // Restore to origin parent to keep DOM tidy
+        if (menu.dataset.portalized && menu.__originParent) {
+            try { menu.__originParent.appendChild(menu); } catch (e) {}
+        }
+        currentOpenDropdown = null;
+        currentOriginParent = null;
+        if (currentToggle) { try { currentToggle.setAttribute('aria-expanded', 'false'); } catch (e) {} }
+        currentToggle = null;
+    }
+
+    // Wire up toggles
+    document.querySelectorAll('.custom-dropdown-toggle').forEach(function(toggle) {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const invoiceId = this.getAttribute('data-invoice-id');
+            const dropdown = document.getElementById('dropdown-' + invoiceId);
+            if (!dropdown) return;
+
+            const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+            if (isHidden) {
+                openMenu(this, dropdown);
+            } else {
+                closeMenu();
+            }
+        });
+    });
+
+    // Global close handlers
+    document.addEventListener('click', function(e) {
+        if (!currentOpenDropdown) return;
+        if (e.target.closest('.custom-dropdown-menu') || e.target.closest('.custom-dropdown-toggle')) return;
+        closeMenu();
+    });
+
+    window.addEventListener('resize', function() {
+        if (!currentOpenDropdown) return;
+        // Reposition on resize rather than closing for better UX
+        if (currentToggle) positionMenu(currentToggle, currentOpenDropdown);
+        else closeMenu();
+    });
+
+    window.addEventListener('scroll', function() {
+        if (currentOpenDropdown) {
+            // Close on scroll to avoid misalignment across containers
+            closeMenu();
+        }
+    }, true); // capture scrolls from any container
+
+    // Close on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeMenu();
+    });
+});
+</script>
+{% endblock %}

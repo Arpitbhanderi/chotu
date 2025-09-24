@@ -1,0 +1,854 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Create New Invoice</h2>
+                    <p class="text-muted mb-0">Fill in the details to create a new invoice</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/invoices" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Invoices
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" action="/save_invoice" id="invoiceForm">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 fw-semibold"><i class="fas fa-file-invoice me-2"></i>Invoice Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Customer *</label>
+                        <select name="customer_id" class="form-select customer-search" required></select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Invoice No</label>
+                        <input type="text" class="form-control" value="AUTO" readonly>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Invoice Date</label>
+                        <input type="date" name="invoice_date" class="form-control" value="{{today}}">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" name="due_date" class="form-control">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label class="form-label">Payment Terms</label>
+                        <select name="terms" class="form-select">
+                            <option>Due on Receipt</option>
+                            <option>Net 7</option>
+                            <option>Net 15</option>
+                            <option>Net 30</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-boxes-stacked me-2 text-primary"></i>Invoice Items</h5>
+                <button type="button" class="btn btn-outline-success" onclick="openProductModal()" title="Add New Product">
+                    <i class="fas fa-plus me-1"></i>New Product
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="itemsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="15%">Item</th>
+                                <th width="20%">Description</th>
+                                <th width="8%">Qty</th>
+                                <th width="10%">Rate (₹)</th>
+                                <th width="10%">Discount (₹)</th>
+                                <th width="8%">Tax %</th>
+                                <th width="12%">Amount (₹)</th>
+                                <th width="7%">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <select name="product_id[]" class="form-select product-search"></select>
+                                </td>
+                                <td>
+                                    <textarea name="description[]" class="form-control description" rows="2" placeholder="Enter item description" style="resize: vertical; min-height: 38px;"></textarea>
+                                </td>
+                                <td>
+                                    <input type="number" name="qty[]" value="1" min="1" class="form-control qty">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="rate[]" class="form-control rate" placeholder="0.00">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="discount[]" value="0" class="form-control discount">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="tax[]" value="0" class="form-control tax">
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control line-total" readonly placeholder="0.00">
+                                </td>
+                                <td class="text-center">
+                                    <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-outline-primary mt-2" id="addRow">
+                    <i class="fas fa-plus me-2"></i>Add Row
+                </button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-sticky-note me-2 text-info"></i>Notes & Additional Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="6">Thanks for your purchase. Zankar Vision | GSTIN: 24AIRPB9566H1ZV</textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-calculator me-2 text-success"></i>Invoice Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="text-end fw-bold">Subtotal:</td>
+                                <td class="text-end"><span id="subTotal">₹0.00</span></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <input type="text" name="discount_type" class="form-control form-control-sm" placeholder="Discount Description">
+                                </td>
+                                <td>
+                                    <input type="number" step="0.01" name="invoice_discount" class="form-control form-control-sm" value="0" style="min-width: 100px;">
+                                </td>
+                            </tr>
+                            <tr class="border-top">
+                                <td class="text-end fw-bold h5">Grand Total:</td>
+                                <td class="text-end"><span id="grandTotal" class="h5 text-success">₹0.00</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Initial Payment Section -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-money-bill-wave me-2 text-primary"></i>Initial Payment (Optional)</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Amount</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" step="0.01" name="initial_payment_amount" class="form-control" value="0" min="0" id="initialPaymentAmount">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Method</label>
+                                <select name="initial_payment_method" class="form-select" id="initialPaymentMethod">
+                                    <option value="">Select Payment Method</option>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="upi">UPI</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cheque">Cheque</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Payment Date</label>
+                                <input type="date" name="initial_payment_date" class="form-control" id="initialPaymentDate" value="{{ today }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Next Expected Payment Date</label>
+                                <input type="date" name="next_expected_payment_date" class="form-control" placeholder="Select next payment date">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Payment Notes</label>
+                                <textarea name="initial_payment_notes" class="form-control" rows="2" placeholder="Optional payment notes..."></textarea>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Amount Due After Payment:</strong> <span id="outstandingBalance">₹0.00</span>
+                                <small class="text-muted ms-2">(Total invoice amount minus initial payment)</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-3">
+            <button type="submit" class="btn btn-success btn-lg px-4">
+                <i class="fas fa-save me-2"></i>Save Invoice
+            </button>
+            <button type="button" class="btn btn-warning btn-lg px-4" style="background-color: green; color: rgb(255, 255, 255);" onclick="alert('Save and WhatsApp Invoice feature coming soon!')">
+                <i class="fab fa-whatsapp me-2"></i>Save and WhatsApp Invoice
+            </button>
+            <a href="/invoices" class="btn btn-secondary btn-lg px-4">
+                <i class="fas fa-times me-2"></i>Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Add New Customer Modal -->
+<div class="modal fade" id="customerModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addCustomerForm">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>Add New Customer
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Fill in the customer details below. Required fields are marked with *.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Name *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Enter customer name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Phone</label>
+                            <input type="text" name="phone" class="form-control" placeholder="Enter phone number">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="Enter email address">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">GSTIN</label>
+                            <input type="text" name="gstin" class="form-control" placeholder="Enter GST number">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Address</label>
+                            <textarea name="address" class="form-control" rows="3" placeholder="Enter complete address"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Save Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add New Product Modal -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="addProductForm">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">
+                        <i class="fas fa-box me-2"></i>Add New Product
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Enter product details. Name and Price are required fields.
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Product Name *</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Enter product name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Price *</label>
+                            <input type="number" step="0.01" name="price" class="form-control" required style="min-width: 120px;" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Barcode</label>
+                            <input type="text" name="barcode" class="form-control" placeholder="Product barcode">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Company/Brand</label>
+                            <input type="text" name="company" class="form-control" placeholder="Brand or company name">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Tax %</label>
+                            <input type="number" step="0.01" name="tax" class="form-control" value="0" placeholder="0.00">
+                        </div>
+                        <div class="col-md-6"></div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Product description or additional details"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save me-2"></i>Save Product
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Open Customer Modal
+function openCustomerModal() {
+    $('#customerModal').modal('show');
+}
+
+// Open Product Modal
+function openProductModal() {
+    $('#productModal').modal('show');
+}
+
+function recalc(){
+    console.log("Recalculating...");
+    let sub=0;
+    $("#itemsTable tbody tr").each(function(){
+        let qty=parseFloat($(this).find(".qty").val())||0;
+        let rate=parseFloat($(this).find(".rate").val())||0;
+        let discAmt=parseFloat($(this).find(".discount").val())||0;
+        let tax=parseFloat($(this).find(".tax").val())||0;
+        let line=(qty*rate - discAmt);
+        line=line*(1+tax/100);
+        $(this).find(".line-total").val(line.toFixed(2));
+        sub+=line;
+        console.log("Row calc - qty:", qty, "rate:", rate, "line:", line.toFixed(2));
+    });
+    $("#subTotal").text("₹" + sub.toFixed(2));
+    let invDisc=parseFloat($("input[name='invoice_discount']").val())||0;
+    let grand=sub-invDisc;
+    $("#grandTotal").text("₹" + grand.toFixed(2));
+    
+    // Set initial payment amount to grand total by default (only if it's currently 0)
+    let currentPayment = parseFloat($("#initialPaymentAmount").val()) || 0;
+    if (currentPayment === 0) {
+        $("#initialPaymentAmount").val(grand.toFixed(2));
+    }
+    
+    // Calculate outstanding balance (Grand Total - Initial Payment)
+    let initialPayment = parseFloat($("#initialPaymentAmount").val()) || 0;
+    let outstanding = grand - initialPayment;
+    $("#outstandingBalance").text("₹" + outstanding.toFixed(2));
+    
+    console.log("Total calculation - subtotal:", sub.toFixed(2), "grand:", grand.toFixed(2), "initial payment:", initialPayment.toFixed(2), "outstanding:", outstanding.toFixed(2));
+}
+
+// Load initial data for customers and products
+let allCustomers = [];
+let allProducts = [];
+
+// Load data when page loads
+$(document).ready(function(){
+    // Load customers and products data
+    $.get('/search_customers', {q: ''}, function(customers) {
+        allCustomers = customers;
+        console.log('Loaded customers:', allCustomers);
+        initializeCustomerDropdowns();
+    });
+    
+    $.get('/search_products', {q: ''}, function(products) {
+        allProducts = products;
+        console.log('Loaded products:', allProducts.length, 'products');
+        console.log('Sample product:', allProducts[0]);
+        initializeProductDropdowns();
+    }).fail(function() {
+        console.error('Failed to load products');
+    });
+    
+    recalc();
+});
+
+function initializeCustomerDropdowns() {
+    $(".customer-search").each(function(){ 
+        initCustomerSearch($(this)); 
+    });
+}
+
+function initializeProductDropdowns() {
+    $(".product-search").each(function(){ 
+        initProductSearch($(this)); 
+    });
+}
+
+function initCustomerSearch(el){
+    // Append options to the select
+    el.empty();
+    // Add empty default option first
+    el.append(new Option("", "", true, false));
+    let customerOptions = allCustomers.slice();
+    customerOptions.forEach(option => {
+        el.append(new Option(option.text, option.id, false, false));
+    });
+    // Add "Add New" option
+    el.append($('<option>', {value: -1, text: "➕ Add New Customer", 'data-new-customer': true}));
+    
+    el.select2({
+        templateResult: function(customer) {
+            if ($(customer.element).data('newCustomer')) {
+                return $("<div style='color:green; font-weight:bold;'><i class='fas fa-user-plus me-2'></i>"+customer.text+"</div>");
+            } else {
+                return $("<div><b>"+customer.text+"</b></div>");
+            }
+        },
+        templateSelection: function(customer) {
+            return customer.text;
+        },
+        placeholder:"Select customer or click to add new",
+        allowClear:true,
+        width:"100%"
+    }).on("select2:selecting", function(e){
+        let data = e.params.args.data;
+        if ($(data.element).data('newCustomer')) {
+            e.preventDefault();
+            openCustomerModal();
+        }
+    });
+}
+
+function initProductSearch(el){
+    console.log("Initializing product search for", el);
+    // Append options to the select
+    el.empty();
+    // Add empty default option first
+    el.append(new Option("", "", true, false));
+    let productOptions = allProducts.slice();
+    
+    // Store product data globally for easy access
+    window.productPrices = window.productPrices || {};
+    
+    productOptions.forEach(option => {
+        console.log("Adding product option:", option.text, "price:", option.price);
+        // Store price in global object
+        window.productPrices[option.id] = option.price;
+        
+        let optionElement = $('<option>', {
+            value: option.id, 
+            text: option.text, 
+            'data-price': option.price, 
+            'data-description': option.description || ''
+        });
+        el.append(optionElement);
+    });
+    // Add "Add New" option
+    el.append($('<option>', {value: -1, text: "➕ Add New Product", 'data-new-product': true}));
+    
+    // Initialize Select2 if available; otherwise keep native select working
+    if ($.fn.select2) {
+    el.select2({
+        templateResult: function(product) {
+            if ($(product.element).data('newProduct')) {
+                return $("<div style='color:green; font-weight:bold;'><i class='fas fa-box me-2'></i>"+product.text+"</div>");
+            } else {
+                return $("<div><b>"+product.text+"</b><br><small style='color:black;'>₹"+ ($(product.element).data('price') || 0) +" | " + ($(product.element).data('description') || 'No description') + "</small></div>");
+            }
+        },
+        templateSelection: function(product) {
+            return product.text;
+        },
+        placeholder:"Select product or click to add new",
+        allowClear:true,
+        width:"100%"
+    }).on("select2:select", function(e){
+        let data = e.params.data;
+        console.log("Product selected, data:", data);
+        console.log("Selected option element:", data.element);
+        
+        if ($(data.element).data('newProduct')) {
+            // Handle new product case
+            openProductModal();
+        } else {
+            let row = $(this).closest("tr");
+            let productId = data.id;
+            
+            // Try multiple ways to get the price
+            let price1 = $(data.element).data('price');
+            let price2 = $(data.element).attr('data-price');
+            let price3 = window.productPrices ? window.productPrices[productId] : null;
+            
+            console.log("Price from data():", price1);
+            console.log("Price from attr():", price2);
+            console.log("Price from global object:", price3);
+            
+            // Use the first available price
+            let price = price1 ?? price2 ?? price3 ?? 0;
+            console.log("Final price to use:", price);
+            
+            // Get the description
+            let description = $(data.element).data('description') || $(data.element).attr('data-description') || '';
+            console.log("Description found:", description);
+            
+            // Set the rate field
+            let rateField = row.find(".rate");
+            console.log("Rate field found:", rateField.length > 0);
+            rateField.val(price);
+            console.log("Rate field value set to:", rateField.val());
+            
+            // Set the description field
+            let descriptionField = row.find(".description");
+            console.log("Description field found:", descriptionField.length > 0);
+            descriptionField.val(description);
+            console.log("Description field value set to:", descriptionField.val());
+            
+            // Trigger recalculation
+            setTimeout(function(){
+                recalc();
+            }, 100);
+        }
+    });
+    } else {
+        // Native select fallback
+        el.on('change', function() {
+            let sel = this.options[this.selectedIndex];
+            if (!sel) return;
+            if (sel.getAttribute('data-new-product')) {
+                openProductModal();
+                return;
+            }
+            let row = $(this).closest('tr');
+            let productId = sel.value;
+            let price = sel.getAttribute('data-price');
+            if (price === null || price === undefined || price === '') {
+                price = window.productPrices ? window.productPrices[productId] : 0;
+            }
+            row.find('.rate').val(price || 0);
+            recalc();
+        });
+    }
+}
+
+$("#addRow").click(function(){
+    let newRow = `
+        <tr>
+            <td>
+                <select name="product_id[]" class="form-select product-search"></select>
+            </td>
+            <td>
+                <textarea name="description[]" class="form-control description" rows="2" placeholder="Enter item description" style="resize: vertical; min-height: 38px;"></textarea>
+            </td>
+            <td>
+                <input type="number" name="qty[]" value="1" min="1" class="form-control qty">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="rate[]" class="form-control rate" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="discount[]" value="0" class="form-control discount">
+            </td>
+            <td>
+                <input type="number" step="0.01" name="tax[]" value="0" class="form-control tax">
+            </td>
+            <td>
+                <input type="text" class="form-control line-total" readonly placeholder="0.00">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
+            </td>
+        </tr>`;
+    $("#itemsTable tbody").append(newRow);
+    let newSelect = $("#itemsTable tbody tr:last .product-search");
+    initProductSearch(newSelect);
+    recalc();
+});
+
+$(document).on("click",".remove-row",function(e){
+    e.preventDefault();
+  console.log("Remove button clicked!");
+  if($("#itemsTable tbody tr").length>1){
+    let row = $(this).closest("tr");
+        // Guard: only destroy if select2 exists and is initialized
+        try {
+            if ($.fn.select2 && row.find('.product-search').data('select2')) {
+                row.find(".product-search").select2('destroy');
+            }
+        } catch(err) {
+            console.warn('select2 destroy skipped:', err);
+        }
+    row.remove();
+    recalc();
+  } else {
+    alert("Cannot remove the last row!");
+  }
+});
+
+$(document).on("change keyup input",".qty,.rate,.discount,.tax,input[name='invoice_discount'],#initialPaymentAmount",function(){
+  console.log("Input changed, recalculating...");
+  recalc();
+});
+
+// Also trigger recalc when product is selected (select2) or changed (native)
+$(document).on('select2:select', '.product-search', function () { setTimeout(recalc, 100); });
+$(document).on('change', '.product-search', function () { setTimeout(recalc, 100); });
+
+// Handle Add Customer AJAX
+$("#addCustomerForm").submit(function(e){
+  e.preventDefault();
+  
+  // Show loading feedback
+  let submitBtn = $(this).find('button[type="submit"]');
+  let originalText = submitBtn.html();
+  submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adding...').prop('disabled', true);
+  
+  $.ajax({
+    url: "/add_customer",
+    type: "POST",
+    data: $(this).serialize(),
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    success: function(resp){
+      if(resp && resp.success){
+        // Hide modal
+        $("#customerModal").modal("hide");
+        
+        // Add to customers array
+        allCustomers.push({
+          id: resp.id,
+          text: resp.text,
+          phone: resp.phone || '',
+          address: resp.address || ''
+        });
+        
+        // Update customer dropdown with new customer (but don't auto-select)
+        let customerSelect = $(".customer-search");
+        customerSelect.select2('destroy');
+        initCustomerSearch(customerSelect);
+        
+        // Clear form
+        $("#addCustomerForm")[0].reset();
+        
+        // Show success message
+        showSuccessMessage("Customer '" + resp.text + "' added successfully!");
+      } else {
+        showErrorMessage("Error: " + (resp && resp.error ? resp.error : "Unknown error occurred"));
+      }
+    },
+    error: function(xhr, status, error){
+      console.log("AJAX Error:", xhr, status, error);
+      let errorMsg = "Error adding customer";
+      if(xhr.responseJSON && xhr.responseJSON.error) {
+        errorMsg = xhr.responseJSON.error;
+      } else if(xhr.responseText) {
+        errorMsg = "Server error: " + xhr.status;
+      } else if(error) {
+        errorMsg = "Network error: " + error;
+      }
+      showErrorMessage(errorMsg);
+    },
+    complete: function(){
+      // Restore button
+      submitBtn.html(originalText).prop('disabled', false);
+    }
+  });
+});
+
+// Handle Add Product AJAX
+$("#addProductForm").submit(function(e){
+  e.preventDefault();
+  
+  // Show loading feedback
+  let submitBtn = $(this).find('button[type="submit"]');
+  let originalText = submitBtn.html();
+  submitBtn.html('<i class="fas fa-spinner fa-spin me-2"></i>Adding...').prop('disabled', true);
+  
+  $.ajax({
+    url: "/add_product",
+    type: "POST",
+    data: $(this).serialize(),
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest'
+    },
+    success: function(resp){
+      if(resp && resp.success){
+        // Hide modal
+        $("#productModal").modal("hide");
+        
+        // Add to products array
+        allProducts.push({
+          id: resp.id,
+          text: resp.text,
+          price: resp.price,
+          description: resp.description || '',
+          barcode: resp.barcode || ''
+        });
+        
+        // Update all product dropdowns and select the new product in the last one
+        $(".product-search").each(function(){
+          $(this).select2('destroy');
+          initProductSearch($(this));
+        });
+        
+        // Update all product dropdowns with new product (but don't auto-select)
+        $(".product-search").each(function(){
+          $(this).select2('destroy');
+          initProductSearch($(this));
+        });
+        
+        // Clear form
+        $("#addProductForm")[0].reset();
+        
+        // Show success message
+        showSuccessMessage("Product '" + resp.text + "' added successfully!");
+      } else {
+        showErrorMessage("Error: " + (resp && resp.error ? resp.error : "Unknown error occurred"));
+      }
+    },
+    error: function(xhr, status, error){
+      console.log("AJAX Error:", xhr, status, error);
+      let errorMsg = "Error adding product";
+      if(xhr.responseJSON && xhr.responseJSON.error) {
+        errorMsg = xhr.responseJSON.error;
+      } else if(xhr.responseText) {
+        errorMsg = "Server error: " + xhr.status;
+      } else if(error) {
+        errorMsg = "Network error: " + error;
+      }
+      showErrorMessage(errorMsg);
+    },
+    complete: function(){
+      // Restore button
+      submitBtn.html(originalText).prop('disabled', false);
+    }
+  });
+});
+
+// Success/Error message functions
+function showSuccessMessage(message) {
+  // Remove any existing alerts
+  $('.alert').remove();
+  
+  // Add success alert
+  let alert = `<div class="alert alert-success alert-dismissible fade show" role="alert">
+    <i class="fas fa-check-circle me-2"></i>${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>`;
+  
+  $('.container-fluid').prepend(alert);
+  
+  // Auto-dismiss after 3 seconds
+  setTimeout(function(){
+    $('.alert-success').fadeOut();
+  }, 3000);
+}
+
+function showErrorMessage(message) {
+  // Remove any existing alerts
+  $('.alert').remove();
+  
+  // Add error alert
+  let alert = `<div class="alert alert-danger alert-dismissible fade show" role="alert">
+    <i class="fas fa-exclamation-circle me-2"></i>${message}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>`;
+  
+  $('.container-fluid').prepend(alert);
+}
+</script>
+
+<style>
+/* Ensure Select2 dropdown main text is black */
+.select2-container--default .select2-results__option {
+    color: black !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    color: black !important;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__placeholder {
+    color: #6c757d !important;
+}
+
+.select2-results__option[aria-selected=true] {
+    color: black !important;
+}
+
+.select2-results__option--highlighted[aria-selected] {
+    color: white !important;
+    background-color: #0d6efd !important;
+}
+
+/* Ensure form elements have black text */
+.form-select, .form-control {
+    color: black !important;
+}
+
+/* Improve invoice table layout */
+#itemsTable {
+    min-width: 1200px;
+    font-size: 0.9rem;
+}
+
+#itemsTable th, #itemsTable td {
+    padding: 8px 6px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+#itemsTable .description {
+    white-space: normal;
+    word-wrap: break-word;
+}
+
+#itemsTable input[type="number"] {
+    min-width: 70px;
+}
+
+#itemsTable .form-select {
+    min-width: 150px;
+}
+
+/* Ensure table is fully visible */
+.table-responsive {
+    overflow-x: auto;
+    min-height: 200px;
+}
+
+/* Better spacing for invoice items */
+#itemsTable tbody tr {
+    min-height: 60px;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 687 700">
+  <!-- Logo content will be recreated based on the image -->
+  <!-- Main electrical plug shape -->
+  <rect x="67" y="456" width="75" height="120" fill="#1e3a5f" rx="8"/>
+  <rect x="140" y="456" width="75" height="120" fill="#1e3a5f" rx="8"/>
+  <rect x="67" y="576" width="148" height="80" fill="#1e3a5f" rx="12"/>
+  
+  <!-- Lightning bolt -->
+  <path d="M95 520 L140 480 L120 500 L160 460 L130 480 L150 500 L110 540 Z" fill="#ff6b35"/>
+  
+  <!-- Text -->
+  <text x="248" y="520" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#1e3a5f">ZANKAR</text>
+  <text x="248" y="590" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="#1e3a5f">VISION</text>
+  <text x="248" y="640" font-family="Arial, sans-serif" font-size="24" font-weight="normal" fill="#ff6b35">ELECTRONICS &amp; ELECTRIC</text>
+</svg>

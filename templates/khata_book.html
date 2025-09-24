@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Khata Book - Customer Accounts{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-book"></i> Khata Book - Customer Accounts
+                    </h3>
+                    <div class="card-tools">
+                        <a href="{{ url_for('customers') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-users"></i> All Customers
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title mb-1">Total Outstanding</h5>
+                                            <h3 class="mb-0">₹{{ "%.2f"|format(khata_data|sum(attribute='outstanding_balance')) }}</h3>
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-rupee-sign fa-2x opacity-75"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-warning text-black">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h5 class="card-title mb-1">Expected in {{ selected_month_display or 'This Month' }}</h5>
+                                            <h3 class="mb-0">₹{{ "%.2f"|format(money_expected_this_month) }}</h3>
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-calendar-alt fa-2x opacity-75"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Search and Filter Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <form method="GET" class="row g-3">
+                                <div class="col-md-3">
+                                    <label for="search" class="form-label">Search Customers</label>
+                                    <input type="text" class="form-control" id="search" name="search"
+                                           value="{{ search }}" placeholder="Search by name or phone...">
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="month" class="form-label">Expected Month</label>
+                                    <select class="form-select" id="month" name="month">
+                                        {% for option in month_options %}
+                                        <option value="{{ option.value }}" {% if selected_month == option.value %}selected{% endif %}>{{ option.display }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label for="balance_filter" class="form-label">Balance Filter</label>
+                                    <select class="form-select" id="balance_filter" name="balance_filter">
+                                        <option value="all" {% if balance_filter == 'all' %}selected{% endif %}>All Balances</option>
+                                        <option value="high" {% if balance_filter == 'high' %}selected{% endif %}>High (≥₹10,000)</option>
+                                        <option value="medium" {% if balance_filter == 'medium' %}selected{% endif %}>Medium (₹1,000-₹9,999)</option>
+                                        <option value="low" {% if balance_filter == 'low' %}selected{% endif %}>Low (<₹1,000)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="sort_by" class="form-label">Sort By</label>
+                                    <select class="form-select" id="sort_by" name="sort_by">
+                                        <option value="balance_desc" {% if sort_by == 'balance_desc' %}selected{% endif %}>Balance (High to Low)</option>
+                                        <option value="balance_asc" {% if sort_by == 'balance_asc' %}selected{% endif %}>Balance (Low to High)</option>
+                                        <option value="name" {% if sort_by == 'name' %}selected{% endif %}>Customer Name</option>
+                                        <option value="last_payment" {% if sort_by == 'last_payment' %}selected{% endif %}>Last Payment Date</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end flex-wrap gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-search"></i> Filter
+                                    </button>
+                                    <a href="{{ url_for('khata_book') }}" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i> Clear
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if khata_data %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Customer Name</th>
+                                        <th>Phone</th>
+                                        <th>Outstanding Balance</th>
+                                        <th>Next Payment Date</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in khata_data %}
+                                    <tr>
+                                        <td>{{ item.customer.name }}</td>
+                                        <td>{{ item.customer.phone or 'N/A' }}</td>
+                                        <td class="text-danger font-weight-bold" style="color: black;">
+                                            ₹{{ "%.2f"|format(item.outstanding_balance) }}
+                                        </td>
+                                        <td>
+                                            {% if item.next_payment_date %}
+                                                <span class="badge badge-warning" style="font-weight: bold; color: black;">
+                                                    {{ item.next_payment_date }}
+                                                </span>
+                                            {% else %}
+                                                <span class="text-muted">No upcoming payment</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ url_for('customer_khata', customer_id=item.customer.id) }}"
+                                                   class="btn btn-sm btn-info">
+                                                    <i class="fas fa-eye"></i> View Details
+                                                </a>
+                                                <a href="{{ url_for('add_customer_payment', customer_id=item.customer.id) }}"
+                                                   class="btn btn-sm btn-success ms-1">
+                                                    <i class="fas fa-plus"></i> Add Payment
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-warning ms-1" style="background-color: green; color: rgb(255, 255, 255);"
+                                                        onclick="alert('WhatsApp Reminder feature coming soon!')">
+                                                    <i class="fab fa-whatsapp"></i> WhatsApp Reminder
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <div class="alert alert-info">
+                                <strong>Total Outstanding:</strong>
+                                ₹{{ "%.2f"|format(khata_data|sum(attribute='outstanding_balance')) }}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <h4><i class="icon fas fa-check"></i> All Clear!</h4>
+                            No customers have outstanding balances. All accounts are settled.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-submit form when any filter changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Get all select elements in the filter form
+    const selects = document.querySelectorAll('select[name="month"], select[name="balance_filter"], select[name="sort_by"]');
+    
+    // Add change event listener to each select
+    selects.forEach(function(select) {
+        select.addEventListener('change', function() {
+            // Submit the form when any select changes
+            select.closest('form').submit();
+        });
+    });
+    
+    // Handle search input - submit on Enter key
+    const searchInput = document.getElementById('search');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchInput.closest('form').submit();
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}

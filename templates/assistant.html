@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold text-dark mb-1">🤖 Chotu AI Assistant</h2>
+            <p class="text-muted mb-0">Your intelligent shop assistant</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm" style="height: 70vh;">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Chotu - AI Shop Assistant</h5>
+                    <div>
+                        <button id="clearChatBtn" class="btn btn-sm btn-light text-primary">Clear Chat</button>
+                    </div>
+                </div>
+                
+                <div class="card-body d-flex flex-column p-0">
+                    <div id="chatMessages" class="flex-grow-1 p-4" style="overflow-y: auto; height: 0;">
+                        <div class="alert alert-success">
+                            <strong>नमस्ते! Hello!</strong><br>
+                            I'm Chotu, your AI shop assistant powered by Google Gemini. I'm ready to help with your shop operations!
+                        </div>
+                    </div>
+                    
+                    <div class="border-top p-4">
+                        <form id="chatForm" class="d-flex gap-2">
+                            <input type="text" id="messageInput" class="form-control" placeholder="Type your message..." autocomplete="off">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('messageInput');
+    const chatMessages = document.getElementById('chatMessages');
+    
+    // Load conversation from localStorage so it persists across reloads
+    const STORAGE_KEY = 'chotu_conversation_history';
+    let conversationHistory = [];
+
+    function loadHistory() {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (raw) {
+                conversationHistory = JSON.parse(raw);
+                // Render existing history
+                for (const turn of conversationHistory) {
+                    const sender = (turn.role === 'user') ? 'user' : 'assistant';
+                    addMessage(turn.content, sender);
+                }
+            }
+        } catch {}
+    }
+
+    function saveHistory() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(conversationHistory));
+        } catch {}
+    }
+    
+    chatForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const message = messageInput.value.trim();
+        if (!message) return;
+        
+        addMessage(message, 'user');
+        messageInput.value = '';
+        
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    message: message,
+                    conversation_history: conversationHistory 
+                })
+            });
+            
+            const result = await response.json();
+            const assistantResponse = result.success ? result.response : 'Error occurred';
+            addMessage(assistantResponse, 'assistant');
+            
+            // Update conversation history
+            if (result.success) {
+                conversationHistory.push({ role: 'user', content: message });
+                conversationHistory.push({ role: 'model', content: assistantResponse });
+                
+                // Keep only last 20 messages to prevent excessive memory usage
+                if (conversationHistory.length > 20) {
+                    conversationHistory = conversationHistory.slice(-20);
+                }
+                // Persist to localStorage
+                saveHistory();
+            }
+        } catch (error) {
+            addMessage('Network error. Please try again.', 'assistant');
+        }
+    });
+
+    // Clear chat button handler
+    const clearBtn = document.getElementById('clearChatBtn');
+    clearBtn.addEventListener('click', function() {
+        conversationHistory = [];
+        saveHistory();
+        chatMessages.innerHTML = '';
+        addMessage('Conversation cleared. Start a new chat.', 'assistant');
+    });
+    
+    function addMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `mb-3 ${sender === 'user' ? 'text-end' : ''}`;
+        const badge = sender === 'user' ? 'bg-primary' : 'bg-secondary';
+        const icon = sender === 'user' ? 'fa-user' : 'fa-robot';
+        
+        messageDiv.innerHTML = `
+            <div class="d-inline-block">
+                <span class="badge ${badge} me-2"><i class="fas ${icon}"></i></span>
+                <span>${text}</span>
+            </div>
+        `;
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Initial load
+    loadHistory();
+});
+</script>
+
+{% endblock %}

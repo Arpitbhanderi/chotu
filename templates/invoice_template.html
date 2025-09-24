@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; }
+    .header { text-align: center; }
+    table { width:100%; border-collapse: collapse; }
+    table th, table td { border:1px solid #ddd; padding:8px; }
+    .right { text-align:right; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h2>{{ company.name }}</h2>
+    <p>{{ company.address }}</p>
+    <p>GSTIN: {{ company.gstin }}</p>
+    <hr />
+    <h3>Invoice: {{ invoice.invoice_no }} | Date: {{ invoice.date }}</h3>
+  </div>
+
+  <h4>Bill To</h4>
+  <pre>{{ invoice.bill_to }}</pre>
+
+  <h4>Items</h4>
+  <table>
+    <thead><tr><th>#</th><th>Item</th><th>Qty</th><th>Rate</th><th>Total</th></tr></thead>
+    <tbody>
+      {% for i, it in enumerate(invoice.items, 1) %}
+      <tr>
+        <td>{{i}}</td>
+        <td>{{it.name}}</td>
+        <td class="right">{{it.qty}}</td>
+        <td class="right">{{"%.2f"|format(it.rate)}}</td>
+        <td class="right">{{"%.2f"|format(it.total)}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3 class="right">Subtotal: ₹{{"%.2f"|format(invoice.subtotal)}}</h3>
+  <h3 class="right">Tax: ₹{{"%.2f"|format(invoice.tax)}}</h3>
+  <h2 class="right">Total: ₹{{"%.2f"|format(invoice.total)}}</h2>
+
+</body>
+</html>

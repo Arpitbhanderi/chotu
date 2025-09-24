@@ -1,0 +1,386 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">Advanced Invoice History</h2>
+                    <p class="text-muted mb-0">Search, filter, and analyze your invoices</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/invoices" class="btn btn-outline-secondary px-4">
+                        <i class="fas fa-arrow-left me-2"></i>Simple View
+                    </a>
+                    <a href="/new_invoice" class="btn btn-primary px-4">
+                        <i class="fas fa-plus me-2"></i>New Invoice
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="fas fa-search me-2"></i>Search & Filter
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="/invoice_history">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="search">Search:</label>
+                                <input type="text" class="form-control" id="search" name="search" 
+                                       value="{{ search_query }}" placeholder="Invoice #, Customer name, or notes">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="customer">Customer:</label>
+                                <select class="form-control" id="customer" name="customer">
+                                    <option value="">All Customers</option>
+                                    {% for customer in customers %}
+                                    <option value="{{ customer.name }}" {% if customer_filter == customer.name %}selected{% endif %}>
+                                        {{ customer.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_from">Date From:</label>
+                                <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="date_to">Date To:</label>
+                                <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-2">
+                                <label for="min_amount">Min Amount:</label>
+                                <input type="number" class="form-control" id="min_amount" name="min_amount" 
+                                       value="{{ min_amount }}" placeholder="0" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="max_amount">Max Amount:</label>
+                                <input type="number" class="form-control" id="max_amount" name="max_amount" 
+                                       value="{{ max_amount }}" placeholder="∞" step="0.01">
+                            </div>
+                            <div class="col-md-2">
+                                <label for="sort">Sort By:</label>
+                                <select class="form-control" id="sort" name="sort">
+                                    <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                                    <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                                    <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Amount (High to Low)</option>
+                                    <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Amount (Low to High)</option>
+                                    <option value="customer" {% if sort_by == 'customer' %}selected{% endif %}>Customer Name</option>
+                                    <option value="number" {% if sort_by == 'number' %}selected{% endif %}>Invoice Number</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 d-flex align-items-end gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Apply Filters
+                                </button>
+                                <a href="/invoice_history" class="btn btn-outline-secondary">
+                                    <i class="fas fa-undo me-2"></i>Clear All
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Summary -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h4>{{ invoices|length }}</h4>
+                    <p class="mb-0">Total Invoices</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h4>₹{{ "%.2f"|format(total_revenue) }}</h4>
+                    <p class="mb-0">Total Revenue</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h4>₹{{ "%.2f"|format(avg_invoice) }}</h4>
+                    <p class="mb-0">Average Invoice</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <h4>₹{{ "%.2f"|format(total_discounts) }}</h4>
+                    <p class="mb-0">Total Discounts</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Table -->
+    {% if invoices %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-semibold">Invoice Results</h5>
+                        <div class="d-flex gap-2">
+                            <span class="badge bg-light text-dark px-3 py-2">{{ invoices|length }} found</span>
+                            <button onclick="exportToCSV()" class="btn btn-sm btn-outline-light">
+                                <i class="fas fa-download me-1"></i>Export CSV
+                            </button>
+                            <button onclick="printResults()" class="btn btn-sm btn-outline-light">
+                                <i class="fas fa-print me-1"></i>Print
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="invoiceTable">
+                            <thead style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-bottom: 2px solid #dee2e6;">
+                                <tr>
+                                    <th class="py-3 ps-4 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-hashtag me-2 text-primary"></i>Invoice #
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-user me-2 text-success"></i>Customer
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-calendar me-2 text-info"></i>Date
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-clock me-2 text-warning"></i>Due Date
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-rupee-sign me-2 text-success"></i>Amount
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-percentage me-2 text-warning"></i>Discount
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-shopping-cart me-2 text-info"></i>Items
+                                    </th>
+                                    <th class="py-3 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-flag me-2 text-danger"></i>Status
+                                    </th>
+                                    <th class="py-3 pe-4 fw-semibold text-dark border-0" style="font-size: 0.9rem;">
+                                        <i class="fas fa-cogs me-2 text-secondary"></i>Actions
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in invoices %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ invoice.number }}</strong>
+                                        {% if invoice.salesperson %}
+                                        <br><small class="text-muted">By: {{ invoice.salesperson }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if invoice.customer %}
+                                        <strong>{{ invoice.customer.name }}</strong>
+                                        {% if invoice.customer.phone %}
+                                        <br><small class="text-muted">📞 {{ invoice.customer.phone }}</small>
+                                        {% endif %}
+                                        {% if invoice.customer.gstin %}
+                                        <br><small class="text-muted">GSTIN: {{ invoice.customer.gstin }}</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ invoice.invoice_date }}</td>
+                                    <td>
+                                        {% if invoice.due_date %}
+                                        {{ invoice.due_date }}
+                                        {% if today_str and invoice.due_date < today_str %}
+                                        <br><small class="text-danger">Overdue</small>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="text-muted">N/A</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <strong class="text-success">₹{{ "%.2f"|format(invoice.total) }}</strong>
+                                    </td>
+                                    <td>
+                                        {% if invoice.discount_amount and invoice.discount_amount > 0 %}
+                                        <span class="text-warning">₹{{ "%.2f"|format(invoice.discount_amount) }}</span>
+                                        <br><small class="text-muted">{{ invoice.discount_type or 'Amount' }}</small>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <span class="badge bg-info text-dark">{{ invoice.invoice_items|length }} items</span>
+                                            {% if invoice.invoice_items %}
+                                            {% set total_qty = invoice.invoice_items|sum(attribute='qty') %}
+                                            <div class="small text-muted">{{ total_qty }} qty</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if invoice.due_date %}
+                                        {% if today_str and invoice.due_date < today_str %}
+                                        <span class="badge bg-danger text-white">Overdue</span>
+                                        {% else %}
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                        {% endif %}
+                                        {% else %}
+                                        <span class="badge bg-success text-white">Paid</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a href="/invoice_details/{{ invoice.id }}" class="btn btn-sm btn-primary text-white" title="View Details">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="/invoice_pdf/{{ invoice.number }}" class="btn btn-sm btn-info text-white" title="Download PDF">
+                                                <i class="fas fa-file-pdf"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center py-5">
+                <h4 class="text-muted">No invoices found</h4>
+                <p class="text-muted">
+                    {% if search_query or customer_filter or date_from or date_to or min_amount or max_amount %}
+                    Try adjusting your search filters or 
+                    <a href="/invoice_history" class="btn btn-link p-0">clear all filters</a>
+                    {% else %}
+                    Create your first invoice to see it here
+                    {% endif %}
+                </p>
+                <a href="/new_invoice" class="btn btn-primary">➕ Create New Invoice</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function exportToCSV() {
+    const table = document.getElementById('invoiceTable');
+    const rows = table.querySelectorAll('tr');
+    let csv = [];
+    
+    // Headers
+    const headers = [];
+    rows[0].querySelectorAll('th').forEach(header => {
+        if (header.textContent.trim() !== 'Actions') {
+            headers.push(header.textContent.trim());
+        }
+    });
+    csv.push(headers.join(','));
+    
+    // Data rows
+    for (let i = 1; i < rows.length; i++) {
+        const row = [];
+        const cells = rows[i].querySelectorAll('td');
+        for (let j = 0; j < cells.length - 1; j++) { // Skip actions column
+            let cellText = cells[j].textContent.trim().replace(/\s+/g, ' ');
+            // Escape commas and quotes
+            if (cellText.includes(',') || cellText.includes('"')) {
+                cellText = '"' + cellText.replace(/"/g, '""') + '"';
+            }
+            row.push(cellText);
+        }
+        csv.push(row.join(','));
+    }
+    
+    // Download
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'invoice_history_' + new Date().toISOString().split('T')[0] + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function printResults() {
+    window.print();
+}
+
+// Auto-submit form when sort changes
+document.getElementById('sort').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+}
+
+.btn-group-vertical .btn {
+    margin-bottom: 2px;
+}
+
+@media print {
+    .card-header, .btn, nav, footer, form {
+        display: none !important;
+    }
+    
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    
+    .container-fluid {
+        padding: 0 !important;
+    }
+    
+    .table {
+        font-size: 0.8em;
+    }
+}
+
+@media (max-width: 768px) {
+    .btn-group-vertical {
+        width: 100%;
+    }
+    
+    .table-responsive {
+        font-size: 0.9em;
+    }
+}
+</style>
+{% endblock %}

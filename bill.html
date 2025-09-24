@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ઝંકાર વિઝન - Invoice</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gujarati:wght@400;700&display=swap');
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans Gujarati', Arial, sans-serif;
+            margin: 0;
+            padding: 10mm;
+            background-color: #f5f5f5;
+        }
+        
+        .invoice-container {
+            background-color: white;
+            border: 2px solid #e91e63;
+            width: 148mm;
+            height: 210mm;
+            margin: 0 auto;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(45deg, #ff4081, #e91e63);
+            color: white;
+            padding: 6mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #e91e63;
+            flex-shrink: 0;
+        }
+        
+        .company-name {
+            font-size: 30px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .contact-info {
+            text-align: right;
+            font-size: 12px;
+            line-height: 1.2;
+        }
+        
+        .services-section {
+            background-color: #fce4ec;
+            padding: 2mm;
+            border-bottom: 1px solid #e91e63;
+            flex-shrink: 0;
+        }
+        
+        .services-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 2mm;
+        }
+        
+        .services-text {
+            text-align: left;
+            font-size: 16px;
+            line-height: 1.4;
+            flex: 1;
+        }
+        
+        .invoice-details {
+            background-color: white;
+            padding: 3mm;
+            border: 1px solid #e91e63;
+            border-radius: 2px;
+            min-width: 35mm;
+            font-size: 9px;
+        }
+        
+        .detail-row {
+            display: flex;
+            margin-bottom: 2mm;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            margin-right: 2mm;
+            white-space: nowrap;
+            width: 12mm;
+        }
+        
+        .detail-value {
+            border-bottom: 1px dotted #666;
+            flex: 1;
+            min-height: 4mm;
+        }
+        
+        .customer-info {
+            padding: 2mm;
+            border-bottom: 1px solid #e91e63;
+            flex-shrink: 0;
+        }
+        
+        .customer-row {
+            display: flex;
+            margin-bottom: 2mm;
+            font-size: 12px;
+            align-items: center;
+        }
+        
+        .customer-label {
+            font-weight: bold;
+            width: 15mm;
+            margin-right: 2mm;
+        }
+        
+        .customer-value {
+            flex: 1;
+            border-bottom: 1px dotted #666;
+            min-height: 4mm;
+        }
+        
+        .mobile-label {
+            margin-left: 20mm;
+            font-weight: bold;
+            margin-right: 2mm;
+            white-space: nowrap;
+        }
+        
+        .mobile-value {
+            border-bottom: 1px dotted #666;
+            width: 25mm;
+        }
+        
+        .table-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            height: 100%;
+        }
+        
+        .invoice-table th {
+            background: linear-gradient(45deg, #ff4081, #e91e63);
+            color: white;
+            padding: 2mm;
+            text-align: center;
+            border: 1px solid #e91e63;
+            font-weight: bold;
+            font-size: 12px;
+            height: 8mm;
+        }
+        
+        .invoice-table td {
+            padding: 1.0mm;
+            border: 1px solid #e91e63;
+            vertical-align: top;
+            height: 6mm;
+        }
+        
+        .sr-col { width: 8%; }
+        .description-col { width: 52%; }
+        .qty-col { width: 12%; }
+        .rate-col { width: 14%; }
+        .amount-col { width: 14%; }
+        
+        .invoice-table tbody tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        
+        .total-row {
+            background-color: #fce4ec !important;
+            font-weight: bold;
+        }
+        
+        .total-row td {
+            border-top: 1px solid #e91e63;
+            padding: 1mm;
+            font-size: 10px;
+            height: 8mm;
+        }
+        
+        .footer {
+            padding: 3mm;
+            border-top: 1px solid #e91e63;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: 12px;
+            margin-right: 40mm;
+        }
+        
+        .gstin {
+            font-weight: bold;
+        }
+        
+        .signature {
+            
+            font-weight: bold;
+            
+        }
+        
+        .pattern-bg {
+            background-image: 
+                radial-gradient(circle at 1px 1px, rgba(233,30,99,0.05) 0.5px, transparent 0);
+            background-size: 8px 8px;
+        }
+        
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                -webkit-box-sizing: border-box;
+                box-sizing: border-box;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: white !important;
+                font-family: 'Noto Sans Gujarati', Arial, sans-serif !important;
+                font-size: 12px !important;
+                line-height: 1.4 !important;
+                color: black !important;
+            }
+            
+            .invoice-container {
+                border: 2px solid #e91e63 !important;
+                width: 148mm !important;
+                height: 210mm !important;
+                margin: 0 !important;
+                box-shadow: none !important;
+                background-color: white !important;
+                overflow: visible !important;
+            }
+            
+            .header {
+                background: #e91e63 !important;
+                color: white !important;
+                border-bottom: 1px solid #e91e63 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .company-name {
+                color: white !important;
+                font-weight: bold !important;
+                text-shadow: none !important;
+            }
+            
+            .contact-info {
+                color: white !important;
+            }
+            
+            .services-section {
+                background-color: white !important;
+                border-bottom: 1px solid #e91e63 !important;
+            }
+            
+            .services-text {
+                color: #333 !important;
+            }
+            
+            .invoice-details {
+                background-color: white !important;
+                border: 1px solid #e91e63 !important;
+            }
+            
+            .detail-label {
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+            
+            .detail-value {
+                border-bottom: 1px dotted #666 !important;
+                color: #000 !important;
+            }
+            
+            .customer-info {
+                border-bottom: 1px solid #e91e63 !important;
+            }
+            
+            .customer-label {
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+            
+            .customer-value {
+                border-bottom: 1px dotted #666 !important;
+                color: #000 !important;
+            }
+            
+            .mobile-value {
+                border-bottom: 1px dotted #666 !important;
+                color: #000 !important;
+            }
+            
+            .invoice-table {
+                border-collapse: collapse !important;
+                border: 1px solid #e91e63 !important;
+                font-size: 10px !important;
+            }
+            
+            .invoice-table th {
+                background: #e91e63 !important;
+                color: white !important;
+                border: 1px solid #e91e63 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .invoice-table td {
+                border: 1px solid #e91e63 !important;
+                color: #000 !important;
+            }
+            
+            .invoice-table tbody tr:nth-child(even) {
+                background-color: #f5f5f5 !important;
+            }
+            
+            .total-row {
+                background-color: #fce4ec !important;
+                border-top: 1px solid #e91e63 !important;
+            }
+            
+            .total-row td {
+                border-top: 1px solid #e91e63 !important;
+                color: #000 !important;
+            }
+            
+            .footer {
+                border-top: 1px solid #e91e63 !important;
+            }
+            
+            .gstin, .signature {
+                font-weight: bold !important;
+                color: #000 !important;
+            }
+            
+            .pattern-bg {
+                background-image: none !important;
+            }
+            
+            @page {
+                size: A5 portrait;
+                margin: 5mm;
+            }
+        }
+        
+        @media screen {
+            body {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-container pattern-bg">
+        <div class="header">
+            <div class="company-name">ઝંકાર વિઝન</div>
+            <div class="contact-info">
+                બસ સ્ટેશનની સામે-વધઈ,<br>
+                તા.વધઈ, જિ.ડાંગ, પીન.નં.:394 730<br>
+                ફોન. +91 98792 89565
+            </div>
+        </div>
+        
+        <div class="services-section">
+            <div class="services-content">
+                <div class="services-text">
+                    <strong>D.T.H. ડીશ, એન્ડ્રોઇડ ટી.વી., મિક્સર મશીન,<br>
+                    વોશિંગ મશીન, પંખા વગેરે ઇલેક્ટ્રીક અને<br>
+                    ઇલેક્ટ્રોનીક્સનું સામાન ટૂટેક તથા હોલસેલમાં મળશે.</strong>
+                </div>
+                <div class="invoice-details">
+                    <div class="detail-row">
+                        <span class="detail-label">બિલ નં.:</span>
+                        <span class="detail-value"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">તારીખ:</span>
+                        <span class="detail-value"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="customer-info">
+            <div class="customer-row">
+                <span class="customer-label">નામ :</span>
+                <span class="customer-value"></span>
+            </div>
+            <div class="customer-row">
+                <span class="customer-label">ગામ :</span>
+                <span class="customer-value"></span>
+                <span class="mobile-label">મો.નં.</span>
+                <span class="mobile-value"></span>
+            </div>
+        </div>
+        
+        <div class="table-section">
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th class="sr-col">ક્રમ</th>
+                        <th class="description-col">વિગત</th>
+                        <th class="qty-col">નંગ</th>
+                        <th class="rate-col">ભાવ</th>
+                        <th class="amount-col">રુ. રકમ પૈ.</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr><td></td><td></td><td></td><td></td><td></td></tr>
+                    <tr class="total-row">
+                        <td colspan="4" style="text-align: right; padding-right: 3mm;"><strong>કુલ</strong></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="footer">
+            <div class="gstin">GSTIN : 24AIRPB9566H1ZV</div>
+            <div class="signature">ઝંકાર વિઝન વતી,</div>
+        </div>
+    </div>
+</body>
+</html>

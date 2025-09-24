@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}{% if invoice %}Add Payment - Invoice {{ invoice.number }}{% else %}Add Payment - {{ customer.name }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">
+                        {% if invoice %}Record Payment - Invoice {{ invoice.number }}{% else %}Record Payment - {{ customer.name }}{% endif %}
+                    </h2>
+                    <p class="text-muted mb-0">
+                        {% if invoice %}Add a payment for this invoice{% else %}Add a new payment for this customer{% endif %}
+                    </p>
+                </div>
+                <div>
+                    {% if invoice %}
+                        <a href="{{ url_for('invoice_payments', invoice_id=invoice.id) }}"
+                           class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Payments
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('customer_khata', customer_id=customer.id) }}"
+                           class="btn btn-outline-secondary px-4">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Khata
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0 fw-semibold">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% if not invoice %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="invoice_id" class="form-label">Invoice (Optional)</label>
+                                <select class="form-select" id="invoice_id" name="invoice_id">
+                                    <option value="">Apply to all unpaid invoices automatically</option>
+                                    {% for inv in invoices %}
+                                    <option value="{{ inv.id }}">
+                                        {{ inv.number }} - Balance: ₹{{ "%.2f"|format(inv.total - inv.total_paid) }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Leave blank to automatically apply payment to oldest unpaid invoices
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Payment Amount *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="amount" name="amount"
+                                           step="0.01" min="0.01" required>
+                                </div>
+                                <div class="form-text" id="balanceHint" style="display: none;">
+                                    Outstanding balance: ₹<span id="balanceAmount">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="payment_date" class="form-label">Payment Date *</label>
+                                <input type="date" class="form-control" id="payment_date" name="payment_date"
+                                       value="{% if invoice %}{{ today }}{% else %}{% if customer.last_payment_date %}{{ customer.last_payment_date }}{% else %}{{ today }}{% endif %}{% endif %}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="payment_method" class="form-label">Payment Method *</label>
+                                <select class="form-select" id="payment_method" name="payment_method" required>
+                                    <option value="cash">Cash</option>
+                                    <option value="card">Card</option>
+                                    <option value="bank_transfer">Bank Transfer</option>
+                                    <option value="cheque">Cheque</option>
+                                    <option value="upi">UPI</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="reference_number" class="form-label">Reference Number</label>
+                                <input type="text" class="form-control" id="reference_number" name="reference_number"
+                                       placeholder="Transaction ID, Cheque No, etc.">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="received_by" class="form-label">Received By</label>
+                                <input type="text" class="form-control" id="received_by" name="received_by"
+                                       placeholder="Name of person who received payment" value="Admin">
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea class="form-control" id="notes" name="notes" rows="2"
+                                          placeholder="Additional notes about this payment"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="expected_next_payment" class="form-label">Expected Next Payment Date</label>
+                                <input type="date" class="form-control" id="expected_next_payment" name="expected_next_payment">
+                                <div class="form-text">
+                                    Optional: When do you expect the next payment from this customer?
+                                </div>
+                            </div>
+                        </div>
+
+                        {% if invoice %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Payment Amount *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="amount" name="amount"
+                                           step="0.01" min="0.01" value="{{ "%.2f"|format(invoice.total - (invoice.total_paid or 0)) }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4">
+                                <i class="fas fa-save me-2"></i>Record Payment
+                            </button>
+                            {% if invoice %}
+                                <a href="{{ url_for('invoice_payments', invoice_id=invoice.id) }}" class="btn btn-secondary px-4">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            {% else %}
+                                <a href="{{ url_for('customer_khata', customer_id=customer.id) }}" class="btn btn-secondary px-4">
+                                    <i class="fas fa-times me-2"></i>Cancel
+                                </a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            {% if invoice %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0 fw-semibold">Invoice Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tr>
+                            <td><strong>Customer:</strong></td>
+                            <td>{{ invoice.customer.name if invoice.customer else 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Total Amount:</strong></td>
+                            <td>₹{{ "%.2f"|format(invoice.total) }}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Already Paid:</strong></td>
+                            <td>₹{{ "%.2f"|format(invoice.total_paid or 0) }}</td>
+                        </tr>
+                        <tr class="border-top">
+                            <td><strong>Remaining:</strong></td>
+                            <td class="text-warning">₹{{ "%.2f"|format(invoice.total - (invoice.total_paid or 0)) }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0 fw-semibold">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{{ url_for('invoice_details', invoice_id=invoice.id) }}" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="fas fa-eye me-2"></i>View Invoice Details
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0 fw-semibold">Customer Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Name:</strong> {{ customer.name }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Phone:</strong> {{ customer.phone or 'N/A' }}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Outstanding Balance:</strong>
+                        <span class="text-danger fw-bold">₹{{ "%.2f"|format(customer.outstanding_balance) }}</span>
+                    </div>
+                    <div class="mb-3">
+                        <strong>Last Payment:</strong> {{ customer.last_payment_date or 'Never' }}
+                    </div>
+                    {% if invoices %}
+                    <div class="mb-3">
+                        <strong>Pending Invoices:</strong> {{ invoices|length }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+{% if not invoice %}
+// Show balance hint when invoice is selected
+document.getElementById('invoice_id').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    const balanceHint = document.getElementById('balanceHint');
+    const balanceAmount = document.getElementById('balanceAmount');
+    
+    if (selectedOption.value) {
+        const balanceText = selectedOption.text;
+        const balanceMatch = balanceText.match(/Balance: ₹([\d.]+)/);
+        if (balanceMatch) {
+            balanceAmount.textContent = balanceMatch[1];
+            balanceHint.style.display = 'block';
+        }
+    } else {
+        balanceHint.style.display = 'none';
+    }
+});
+{% else %}
+// Auto-fill remaining balance when amount field is focused
+document.getElementById('amount').addEventListener('focus', function() {
+    if (!this.value) {
+        this.value = '{{ "%.2f"|format(invoice.total - (invoice.total_paid or 0)) }}';
+    }
+});
+{% endif %}
+</script>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: 1px solid #dee2e6;
+}
+
+.card-header {
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

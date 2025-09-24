@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Payment Challan - {{ challan_number }}{% endblock %}
+
+{% block content %}
+<style>
+.challan-container {
+    max-width: 800px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.challan-header {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 2rem;
+    text-align: center;
+    position: relative;
+}
+
+.challan-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.challan-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.challan-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 0;
+}
+
+.challan-number {
+    background: rgba(255,255,255,0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    display: inline-block;
+    margin-top: 1rem;
+}
+
+.challan-body {
+    padding: 2rem;
+}
+
+.customer-info-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border-left: 4px solid #28a745;
+}
+
+.customer-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 1rem;
+}
+
+.payment-details-section {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.95rem;
+}
+
+.detail-value {
+    font-weight: 700;
+    color: #212529;
+    font-size: 1rem;
+}
+
+.amount-highlight {
+    font-size: 1.5rem;
+    color: #28a745;
+    font-weight: 800;
+}
+
+.invoices-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid #dee2e6;
+}
+
+.invoice-item {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-left: 3px solid #28a745;
+}
+
+.challan-footer {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    text-align: center;
+}
+
+.footer-text {
+    margin-bottom: 0.5rem;
+    opacity: 0.9;
+}
+
+.btn-challan {
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    margin: 0.25rem;
+}
+
+.btn-challan:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    .challan-container {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+
+    body {
+        background: white !important;
+    }
+}
+</style>
+
+<div class="container-fluid">
+    <!-- Header Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4 no-print">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">
+                <i class="fas fa-receipt text-success me-2"></i>Payment Challan Generated
+            </h2>
+            <p class="text-muted mb-0">Payment has been successfully recorded</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="window.print()" class="btn btn-outline-primary btn-challan">
+                <i class="fas fa-print me-2"></i>Print Challan
+            </button>
+            <a href="{{ url_for('customer_khata', customer_id=customer.id) }}" class="btn btn-success btn-challan">
+                <i class="fas fa-arrow-left me-2"></i>Back to Khata
+            </a>
+        </div>
+    </div>
+
+    <!-- Challan Container -->
+    <div class="challan-container">
+        <!-- Challan Header -->
+        <div class="challan-header">
+            <h1 class="challan-title">
+                <i class="fas fa-check-circle me-3"></i>Payment Received
+            </h1>
+            <p class="challan-subtitle">Deposit Challan / Payment Receipt</p>
+            <div class="challan-number">
+                <i class="fas fa-hashtag me-2"></i>{{ challan_number }}
+            </div>
+        </div>
+
+        <!-- Challan Body -->
+        <div class="challan-body">
+            <!-- Customer Information -->
+            <div class="customer-info-section">
+                <div class="d-flex align-items-center">
+                    <div class="customer-avatar">
+                        {{ customer.name[0].upper() }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 class="mb-1">{{ customer.name }}</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-phone me-2"></i>{{ customer.phone or 'N/A' }}
+                                </small>
+                            </div>
+                            {% if customer.email %}
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <i class="fas fa-envelope me-2"></i>{{ customer.email }}
+                                </small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% if customer.address %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-map-marker-alt me-2"></i>{{ customer.address }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Details -->
+            <div class="payment-details-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-money-bill-wave text-success me-2"></i>Payment Details
+                </h5>
+
+                <div class="detail-row">
+                    <span class="detail-label">Payment Date</span>
+                    <span class="detail-value">{{ payment_date }}</span>
+                </div>
+
+                <div class="detail-row">
+                    <span class="detail-label">Payment Method</span>
+                    <span class="detail-value">{{ payment_method.title() }}</span>
+                </div>
+
+                {% if reference_number %}
+                <div class="detail-row">
+                    <span class="detail-label">Reference Number</span>
+                    <span class="detail-value">{{ reference_number }}</span>
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="detail-label">Received By</span>
+                    <span class="detail-value">{{ received_by }}</span>
+                </div>
+
+                {% if notes %}
+                <div class="detail-row">
+                    <span class="detail-label">Notes</span>
+                    <span class="detail-value">{{ notes }}</span>
+                </div>
+                {% endif %}
+
+                <div class="detail-row">
+                    <span class="detail-label">Total Amount Paid</span>
+                    <span class="detail-value amount-highlight">₹{{ "%.2f"|format(amount) }}</span>
+                </div>
+            </div>
+
+            <!-- Invoice Details -->
+            {% if invoice %}
+            <div class="invoices-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-file-invoice-dollar text-primary me-2"></i>Applied to Invoice
+                </h5>
+                <div class="invoice-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ invoice.number }}</strong>
+                            <br>
+                            <small class="text-muted">Date: {{ invoice.invoice_date }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="amount-highlight">₹{{ "%.2f"|format(amount) }}</div>
+                            <small class="text-muted">Payment Applied</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% elif invoices %}
+            <div class="invoices-section">
+                <h5 class="mb-3">
+                    <i class="fas fa-file-invoice-dollar text-primary me-2"></i>Applied to Invoices
+                </h5>
+                {% for inv in invoices %}
+                <div class="invoice-item">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ inv.number }}</strong>
+                            <br>
+                            <small class="text-muted">Date: {{ inv.invoice_date }}</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="text-success fw-bold">
+                                ₹{{ "%.2f"|format(min(amount, inv.total - inv.total_paid)) }}
+                            </div>
+                            <small class="text-muted">Applied to this invoice</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Challan Footer -->
+        <div class="challan-footer">
+            <p class="footer-text">
+                <i class="fas fa-check-circle me-2"></i>
+                This payment has been successfully recorded in the system
+            </p>
+            <p class="footer-text mb-0">
+                <small>Generated on {{ payment_date }} | Challan ID: {{ challan_number }}</small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Action Buttons (Bottom) -->
+    <div class="text-center mt-4 no-print">
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <button onclick="window.print()" class="btn btn-outline-primary btn-challan">
+                <i class="fas fa-print me-2"></i>Print Challan
+            </button>
+            <a href="{{ url_for('customer_khata', customer_id=customer.id) }}" class="btn btn-success btn-challan">
+                <i class="fas fa-arrow-left me-2"></i>View Customer Khata
+            </a>
+            <a href="{{ url_for('new_invoice') }}?customer={{ customer.id }}" class="btn btn-primary btn-challan">
+                <i class="fas fa-plus me-2"></i>Create New Invoice
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-print functionality (optional)
+// Uncomment the line below if you want automatic printing
+// window.onload = function() { window.print(); };
+</script>
+
+{% endblock %}
